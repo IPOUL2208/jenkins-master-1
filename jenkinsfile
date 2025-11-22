@@ -1,0 +1,38 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git 'https://github.com/<your-username>/<your-repo>.git'
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                sh 'npm install'
+            }
+        }
+
+        stage('Build') {
+            when {
+                expression { fileExists('package.json') && readJSON(file: 'package.json').scripts.build != null }
+            }
+            steps {
+                sh 'npm run build'
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                script {
+                    sh '''
+                    pm2 stop all || true
+                    pm2 start server.js --name my-node-app    # Change to your entry file
+                    pm2 save
+                    '''
+                }
+            }
+        }
+    }
+}
